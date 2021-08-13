@@ -51,17 +51,20 @@ type path struct {
 }
 
 // setup initializes values that are independent of the perspective
-func (p *path) setup(oliaSenders map[protocol.PathID]*congestion.OliaSender) {
+func (p *path) setup(cubicSenders map[protocol.PathID]*congestion.CubicSender) {
 	p.rttStats = &congestion.RTTStats{}
 
 	var cong congestion.SendAlgorithm
 
-	if p.sess.version >= protocol.VersionMP && oliaSenders != nil && p.pathID != protocol.InitialPathID {
-		cong = congestion.NewOliaSender(oliaSenders, p.rttStats, protocol.InitialCongestionWindow, protocol.DefaultMaxCongestionWindow)
-		oliaSenders[p.pathID] = cong.(*congestion.OliaSender)
+	if p.sess.version >= protocol.VersionMP && cubicSenders != nil && p.pathID != protocol.InitialPathID {
+		//cong = congestion.NewOliaSender(oliaSenders, p.rttStats, protocol.InitialCongestionWindow, protocol.DefaultMaxCongestionWindow)
+		cong = congestion.NewCubicSender(cubicSenders,congestion.DefaultClock{}, p.rttStats,false, protocol.InitialCongestionWindow, protocol.DefaultMaxCongestionWindow)
+		//oliaSenders[p.pathID] = cong.(*congestion.OliaSender)
+		cubicSenders[p.pathID] = cong.(*congestion.CubicSender)
+	
 	}
 
-	sentPacketHandler := ackhandler.NewSentPacketHandler(p.rttStats, cong, p.onRTO)
+	sentPacketHandler := ackhandler.NewSentPacketHandler(cubicSenders,p.rttStats, cong, p.onRTO)
 
 	now := time.Now()
 

@@ -88,13 +88,14 @@ type sentPacketHandler struct {
 }
 
 // NewSentPacketHandler creates a new sentPacketHandler
-func NewSentPacketHandler(rttStats *congestion.RTTStats, cong congestion.SendAlgorithm, onRTOCallback func(time.Time) bool) SentPacketHandler {
+func NewSentPacketHandler(cubicSenders map[protocol.PathID]*congestion.CubicSender,rttStats *congestion.RTTStats, cong congestion.SendAlgorithm, onRTOCallback func(time.Time) bool) SentPacketHandler {
 	var congestionControl congestion.SendAlgorithm
 
 	if cong != nil {
 		congestionControl = cong
 	} else {
 		congestionControl = congestion.NewCubicSender(
+			cubicSenders,
 			congestion.DefaultClock{},
 			rttStats,
 			false, /* don't use reno since chromium doesn't (why?) */

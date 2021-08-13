@@ -13,12 +13,13 @@ const (
 	renoBeta                       float32               = 0.7 // Reno backoff factor.
 )
 
-type cubicSender struct {
+type CubicSender struct {
 	hybridSlowStart HybridSlowStart
 	prr             PrrSender
 	rttStats        *RTTStats
 	stats           connectionStats
 	cubic           *Cubic
+	cubicSenders     map[protocol.PathID]*CubicSender
 
 	reno bool
 
@@ -61,22 +62,40 @@ type cubicSender struct {
 }
 
 // NewCubicSender makes a new cubic sender
-func NewCubicSender(clock Clock, rttStats *RTTStats, reno bool, initialCongestionWindow, initialMaxCongestionWindow protocol.PacketNumber) SendAlgorithmWithDebugInfo {
-	return &cubicSender{
-		rttStats:                   rttStats,
-		initialCongestionWindow:    initialCongestionWindow,
-		initialMaxCongestionWindow: initialMaxCongestionWindow,
-		congestionWindow:           initialCongestionWindow,
-		minCongestionWindow:        defaultMinimumCongestionWindow,
-		slowstartThreshold:         initialMaxCongestionWindow,
-		maxTCPCongestionWindow:     initialMaxCongestionWindow,
-		numConnections:             defaultNumConnections,
-		cubic:                      NewCubic(clock),
-		reno:                       reno,
+//func NewCubicSender(clock Clock, rttStats *RTTStats, reno bool, initialCongestionWindow, initialMaxCongestionWindow protocol.PacketNumber) SendAlgorithmWithDebugInfo {
+	//return &CubicSender{
+		//rttStats:                   rttStats,
+		//initialCongestionWindow:    initialCongestionWindow,
+		//initialMaxCongestionWindow: initialMaxCongestionWindow,
+		//congestionWindow:           initialCongestionWindow,
+		//minCongestionWindow:        defaultMinimumCongestionWindow,
+		//slowstartThreshold:         initialMaxCongestionWindow,
+		//maxTCPCongestionWindow:     initialMaxCongestionWindow,
+		//numConnections:             defaultNumConnections,
+		//cubic:                      NewCubic(clock),
+		//reno:                       reno,
+	//}
+//}
+
+func NewCubicSender(cubicSenders map[protocol.PathID]*CubicSender,clock Clock, rttStats *RTTStats, reno bool, initialCongestionWindow, initialMaxCongestionWindow protocol.PacketNumber) SendAlgorithmWithDebugInfo {
+	return &CubicSender{
+	
+	rttStats:                   rttStats,
+	initialCongestionWindow:    initialCongestionWindow,
+	initialMaxCongestionWindow: initialMaxCongestionWindow,
+	congestionWindow:           initialCongestionWindow,
+	minCongestionWindow:        defaultMinimumCongestionWindow,
+	slowstartThreshold:         initialMaxCongestionWindow,
+	maxTCPCongestionWindow:     initialMaxCongestionWindow,
+	numConnections:             defaultNumConnections,
+	cubic:                      NewCubic(clock),
+	reno:                       reno,
+	cubicSenders:               cubicSenders,
+
 	}
 }
 
-func (c *cubicSender) TimeUntilSend(now time.Time, bytesInFlight protocol.ByteCount) time.Duration {
+func (c *CubicSender) TimeUntilSend(now time.Time, bytesInFlight protocol.ByteCount) time.Duration {
 	if c.InRecovery() {
 		// PRR is used when in recovery.
 		return c.prr.TimeUntilSend(c.GetCongestionWindow(), bytesInFlight, c.GetSlowStartThreshold())
@@ -87,7 +106,7 @@ func (c *cubicSender) TimeUntilSend(now time.Time, bytesInFlight protocol.ByteCo
 	return utils.InfDuration
 }
 
-func (c *cubicSender) OnPacketSent(sentTime time.Time, bytesInFlight protocol.ByteCount, packetNumber protocol.PacketNumber, bytes protocol.ByteCount, isRetransmittable bool) bool {
+func (c *CubicSender) OnPacketSent(sentTime time.Time, bytesInFlight protocol.ByteCount, packetNumber protocol.PacketNumber, bytes protocol.ByteCount, isRetransmittable bool) bool {
 	// Only update bytesInFlight for data packets.
 	if !isRetransmittable {
 		return false
@@ -101,37 +120,37 @@ func (c *cubicSender) OnPacketSent(sentTime time.Time, bytesInFlight protocol.By
 	return true
 }
 
-func (c *cubicSender) InRecovery() bool {
+func (c *CubicSender) InRecovery() bool {
 	return c.largestAckedPacketNumber <= c.largestSentAtLastCutback && c.largestAckedPacketNumber != 0
 }
 
-func (c *cubicSender) InSlowStart() bool {
+func (c *CubicSender) InSlowStart() bool {
 	return c.GetCongestionWindow() < c.GetSlowStartThreshold()
 }
 
-func (c *cubicSender) GetCongestionWindow() protocol.ByteCount {
+func (c *CubicSender) GetCongestionWindow() protocol.ByteCount {
 	return protocol.ByteCount(c.congestionWindow) * protocol.DefaultTCPMSS
 }
 
-func (c *cubicSender) GetSlowStartThreshold() protocol.ByteCount {
+func (c *CubicSender) GetSlowStartThreshold() protocol.ByteCount {
 	return protocol.ByteCount(c.slowstartThreshold) * protocol.DefaultTCPMSS
 }
 
-func (c *cubicSender) ExitSlowstart() {
+func (c *CubicSender) ExitSlowstart() {
 	c.slowstartThreshold = c.congestionWindow
 }
 
-func (c *cubicSender) SlowstartThreshold() protocol.PacketNumber {
+func (c *CubicSender) SlowstartThreshold() protocol.PacketNumber {
 	return c.slowstartThreshold
 }
 
-func (c *cubicSender) MaybeExitSlowStart() {
+func (c *CubicSender) MaybeExitSlowStart() {
 	if c.InSlowStart() && c.hybridSlowStart.ShouldExitSlowStart(c.rttStats.LatestRTT(), c.rttStats.MinRTT(), c.GetCongestionWindow()/protocol.DefaultTCPMSS) {
 		c.ExitSlowstart()
 	}
 }
 
-func (c *cubicSender) OnPacketAcked(ackedPacketNumber protocol.PacketNumber, ackedBytes protocol.ByteCount, bytesInFlight protocol.ByteCount) {
+func (c *CubicSender) OnPacketAcked(ackedPacketNumber protocol.PacketNumber, ackedBytes protocol.ByteCount, bytesInFlight protocol.ByteCount) {
 	c.largestAckedPacketNumber = utils.MaxPacketNumber(ackedPacketNumber, c.largestAckedPacketNumber)
 	if c.InRecovery() {
 		// PRR is used when in recovery.
@@ -144,7 +163,7 @@ func (c *cubicSender) OnPacketAcked(ackedPacketNumber protocol.PacketNumber, ack
 	}
 }
 
-func (c *cubicSender) OnPacketLost(packetNumber protocol.PacketNumber, lostBytes protocol.ByteCount, bytesInFlight protocol.ByteCount) {
+func (c *CubicSender) OnPacketLost(packetNumber protocol.PacketNumber, lostBytes protocol.ByteCount, bytesInFlight protocol.ByteCount) {
 	// TCP NewReno (RFC6582) says that once a loss occurs, any losses in packets
 	// already sent should be treated as a single loss event, since it's expected.
 	if packetNumber <= c.largestSentAtLastCutback {
@@ -187,7 +206,7 @@ func (c *cubicSender) OnPacketLost(packetNumber protocol.PacketNumber, lostBytes
 	c.congestionWindowCount = 0
 }
 
-func (c *cubicSender) RenoBeta() float32 {
+func (c *CubicSender) RenoBeta() float32 {
 	// kNConnectionBeta is the backoff factor after loss for our N-connection
 	// emulation, which emulates the effective backoff of an ensemble of N
 	// TCP-Reno connections on a single loss event. The effective multiplier is
@@ -197,7 +216,7 @@ func (c *cubicSender) RenoBeta() float32 {
 
 // Called when we receive an ack. Normal TCP tracks how many packets one ack
 // represents, but quic has a separate ack for each packet.
-func (c *cubicSender) maybeIncreaseCwnd(ackedPacketNumber protocol.PacketNumber, ackedBytes protocol.ByteCount, bytesInFlight protocol.ByteCount) {
+func (c *CubicSender) maybeIncreaseCwnd(ackedPacketNumber protocol.PacketNumber, ackedBytes protocol.ByteCount, bytesInFlight protocol.ByteCount) {
 	// Do not increase the congestion window unless the sender is close to using
 	// the current window.
 	if !c.isCwndLimited(bytesInFlight) {
@@ -226,7 +245,7 @@ func (c *cubicSender) maybeIncreaseCwnd(ackedPacketNumber protocol.PacketNumber,
 	}
 }
 
-func (c *cubicSender) isCwndLimited(bytesInFlight protocol.ByteCount) bool {
+func (c *CubicSender) isCwndLimited(bytesInFlight protocol.ByteCount) bool {
 	congestionWindow := c.GetCongestionWindow()
 	if bytesInFlight >= congestionWindow {
 		return true
@@ -237,7 +256,7 @@ func (c *cubicSender) isCwndLimited(bytesInFlight protocol.ByteCount) bool {
 }
 
 // BandwidthEstimate returns the current bandwidth estimate
-func (c *cubicSender) BandwidthEstimate() Bandwidth {
+func (c *CubicSender) BandwidthEstimate() Bandwidth {
 	srtt := c.rttStats.SmoothedRTT()
 	if srtt == 0 {
 		// If we haven't measured an rtt, the bandwidth estimate is unknown.
@@ -247,18 +266,18 @@ func (c *cubicSender) BandwidthEstimate() Bandwidth {
 }
 
 // HybridSlowStart returns the hybrid slow start instance for testing
-func (c *cubicSender) HybridSlowStart() *HybridSlowStart {
+func (c *CubicSender) HybridSlowStart() *HybridSlowStart {
 	return &c.hybridSlowStart
 }
 
 // SetNumEmulatedConnections sets the number of emulated connections
-func (c *cubicSender) SetNumEmulatedConnections(n int) {
+func (c *CubicSender) SetNumEmulatedConnections(n int) {
 	c.numConnections = utils.Max(n, 1)
 	c.cubic.SetNumConnections(c.numConnections)
 }
 
 // OnRetransmissionTimeout is called on an retransmission timeout
-func (c *cubicSender) OnRetransmissionTimeout(packetsRetransmitted bool) {
+func (c *CubicSender) OnRetransmissionTimeout(packetsRetransmitted bool) {
 	c.largestSentAtLastCutback = 0
 	if !packetsRetransmitted {
 		return
@@ -270,7 +289,7 @@ func (c *cubicSender) OnRetransmissionTimeout(packetsRetransmitted bool) {
 }
 
 // OnConnectionMigration is called when the connection is migrated (?)
-func (c *cubicSender) OnConnectionMigration() {
+func (c *CubicSender) OnConnectionMigration() {
 	c.hybridSlowStart.Restart()
 	c.prr = PrrSender{}
 	c.largestSentPacketNumber = 0
@@ -285,18 +304,18 @@ func (c *cubicSender) OnConnectionMigration() {
 }
 
 // SetSlowStartLargeReduction allows enabling the SSLR experiment
-func (c *cubicSender) SetSlowStartLargeReduction(enabled bool) {
+func (c *CubicSender) SetSlowStartLargeReduction(enabled bool) {
 	c.slowStartLargeReduction = enabled
 }
 
 // RetransmissionDelay gives the time to retransmission
-func (c *cubicSender) RetransmissionDelay() time.Duration {
+func (c *CubicSender) RetransmissionDelay() time.Duration {
 	if c.rttStats.SmoothedRTT() == 0 {
 		return 0
 	}
 	return c.rttStats.SmoothedRTT() + c.rttStats.MeanDeviation()*4
 }
 
-func (c *cubicSender) SmoothedRTT() time.Duration {
+func (c *CubicSender) SmoothedRTT() time.Duration {
 	return c.rttStats.SmoothedRTT()
 }
