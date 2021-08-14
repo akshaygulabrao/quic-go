@@ -16,7 +16,7 @@ const NonForwardSecurePacketSizeReduction = 50
 const DefaultMaxCongestionWindow = 2500
 
 // InitialCongestionWindow is the initial congestion window in QUIC packets
-const InitialCongestionWindow = 32
+const InitialCongestionWindow = 1 
 
 // MaxUndecryptablePackets limits the number of undecryptable packets that a
 // session queues for later until it sends a public reset.
