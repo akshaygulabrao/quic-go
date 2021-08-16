@@ -789,7 +789,7 @@ func (s *session) sendPackedPacket(packet *packedPacket, pth *path) error {
 	pth.sentPacket<-struct{}{}
 
 	s.logPacket(packet, pth.pathID)
-	utils.Infof("%x %v %v %v",s.connectionID,pth.pathID,pth.sentPacketHandler.GetBytesInFlight(),pth.sentPacketHandler.GetCongestionWindow())
+	//utils.Infof("%x %v %v %v",s.connectionID,pth.pathID,pth.sentPacketHandler.GetBytesInFlight(),pth.sentPacketHandler.GetCongestionWindow())
 	return pth.conn.Write(packet.raw)
 }
 
@@ -819,11 +819,11 @@ func (s *session) sendPing(pth *path) error {
 }
 
 func (s *session) logPacket(packet *packedPacket, pathID protocol.PathID) {
-	if !utils.Debug() {
+	if utils.Debug() {
 		// We don't need to allocate the slices for calling the format functions
 		return
 	}
-	utils.Debugf("-> Sending packet 0x%x (%d bytes) for connection %x on path %x", packet.number, len(packet.raw), s.connectionID, pathID)
+	utils.Infof("-> Sending packet 0x%x (%d bytes) for connection %x on path %x", packet.number, len(packet.raw), s.connectionID, pathID)
 	for _, frame := range packet.frames {
 		wire.LogFrame(frame, true)
 	}

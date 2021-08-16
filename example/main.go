@@ -128,7 +128,7 @@ func main() {
 	} else {
 		utils.SetLogLevel(utils.LogLevelInfo)
 	}
-	utils.SetLogTimeFormat("")
+	utils.SetLogTimeFormat("a")
 
 	certFile := *certPath + "/fullchain.pem"
 	keyFile := *certPath + "/privkey.pem"
