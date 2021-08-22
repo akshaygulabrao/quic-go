@@ -595,7 +595,7 @@ func (s *session) handleStreamFrame(frame *wire.StreamFrame) error {
 		for pathID, pth := range s.paths {
 			sntPkts, sntRetrans, sntLost := pth.sentPacketHandler.GetStatistics()
 			rcvPkts := pth.receivedPacketHandler.GetStatistics()
-			utils.Infof("Path %x: sent %d retrans %d lost %d; rcv %d", pathID, sntPkts, sntRetrans, sntLost, rcvPkts)
+			utils.Debugf("Path %x: sent %d retrans %d lost %d; rcv %d", pathID, sntPkts, sntRetrans, sntLost, rcvPkts)
 		}
 		s.pathsLock.RUnlock()
 	}
@@ -823,7 +823,7 @@ func (s *session) logPacket(packet *packedPacket, pathID protocol.PathID) {
 		// We don't need to allocate the slices for calling the format functions
 		return
 	}
-	utils.Infof("-> Sending packet 0x%x (%d bytes) for connection %x on path %x", packet.number, len(packet.raw), s.connectionID, pathID)
+	utils.Debugf("-> Sending packet 0x%x (%d bytes) for connection %x on path %x", packet.number, len(packet.raw), s.connectionID, pathID)
 	for _, frame := range packet.frames {
 		wire.LogFrame(frame, true)
 	}

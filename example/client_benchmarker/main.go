@@ -30,7 +30,7 @@ func main() {
 	} else {
 		utils.SetLogLevel(utils.LogLevelInfo)
 	}
-
+	utils.SetLogTimeFormat("a")
 	if *output != "" {
 		logfile, err := os.Create(*output)
 		if err != nil {

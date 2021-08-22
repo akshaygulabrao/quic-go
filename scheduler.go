@@ -241,11 +241,11 @@ func (sch *scheduler) performPacketSending(s *session, windowUpdateFrames []*wir
 			if frame.FinBit {
 				// Last packet to send on the stream, print stats
 				s.pathsLock.RLock()
-				utils.Infof("Info for stream %x of %x", frame.StreamID, s.connectionID)
+				utils.Debugf("Info for stream %x of %x", frame.StreamID, s.connectionID)
 				for pathID, pth := range s.paths {
 					sntPkts, sntRetrans, sntLost := pth.sentPacketHandler.GetStatistics()
 					rcvPkts := pth.receivedPacketHandler.GetStatistics()
-					utils.Infof("Path %x: sent %d retrans %d lost %d; rcv %d rtt %v", pathID, sntPkts, sntRetrans, sntLost, rcvPkts, pth.rttStats.SmoothedRTT())
+					utils.Debugf("Path %x: sent %d retrans %d lost %d; rcv %d rtt %v", pathID, sntPkts, sntRetrans, sntLost, rcvPkts, pth.rttStats.SmoothedRTT())
 				}
 				s.pathsLock.RUnlock()
 			}
