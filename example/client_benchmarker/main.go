@@ -24,7 +24,7 @@ func main() {
 	cache := flag.Bool("c", false, "cache handshake information")
 	flag.Parse()
 	urls := flag.Args()
-
+	utils.SetLogTimeFormat("a")
 	if *verbose {
 		utils.SetLogLevel(utils.LogLevelDebug)
 	} else {

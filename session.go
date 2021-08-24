@@ -819,7 +819,7 @@ func (s *session) sendPing(pth *path) error {
 }
 
 func (s *session) logPacket(packet *packedPacket, pathID protocol.PathID) {
-	if utils.Debug() {
+	if !utils.Debug() {
 		// We don't need to allocate the slices for calling the format functions
 		return
 	}
