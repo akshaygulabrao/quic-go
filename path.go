@@ -204,11 +204,11 @@ func (p *path) handlePacketImpl(pkt *receivedPacket) error {
 	packet, err := p.sess.unpacker.Unpack(hdr.Raw, hdr, data)
 	if !utils.Debug() {
 		if err != nil {
-			//utils.Infof("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data)+len(hdr.Raw), hdr.ConnectionID, p.pathID)
-			utils.Infof("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data), hdr.ConnectionID, p.pathID)
+			utils.Infof("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data)+len(hdr.Raw), hdr.ConnectionID, p.pathID)
+			//utils.Infof("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data), hdr.ConnectionID, p.pathID)
 		} else {
-			//utils.Infof("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data)+len(hdr.Raw), hdr.ConnectionID, p.pathID)
-			utils.Infof("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data), hdr.ConnectionID, p.pathID)
+			utils.Infof("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data)+len(hdr.Raw), hdr.ConnectionID, p.pathID)
+			//utils.Infof("<- Reading packet 0x%x (%d bytes) for connection %x on path %x", hdr.PacketNumber, len(data) + len(hdr.Raw), hdr.ConnectionID, p.pathID)
 		}
 	}
 
