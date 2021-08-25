@@ -122,13 +122,12 @@ func main() {
 	www := flag.String("www", "/var/www", "www data")
 	tcp := flag.Bool("tcp", false, "also listen on TCP")
 	flag.Parse()
-
 	if *verbose {
 		utils.SetLogLevel(utils.LogLevelInfo)
 	} else {
 		utils.SetLogLevel(utils.LogLevelInfo)
 	}
-	utils.SetLogTimeFormat("")
+	utils.SetLogTimeFormat("a")
 
 	certFile := *certPath + "/fullchain.pem"
 	keyFile := *certPath + "/privkey.pem"
