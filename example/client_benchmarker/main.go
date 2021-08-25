@@ -25,6 +25,7 @@ func main() {
 	flag.Parse()
 	urls := flag.Args()
 
+	utils.SetLogTimeFormat("a")
 	if *verbose {
 		utils.SetLogLevel(utils.LogLevelDebug)
 	} else {

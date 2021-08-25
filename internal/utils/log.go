@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"strconv"
 	"fmt"
 	"log"
 	"os"
@@ -62,9 +63,13 @@ func Errorf(format string, args ...interface{}) {
 	}
 }
 
+func its(x float64) string{
+	return strconv.FormatFloat(x,'f',-1,64)
+}
+
 func logMessage(format string, args ...interface{}) {
 	if len(timeFormat) > 0 {
-		log.Printf(time.Now().Format(timeFormat)+" "+format, args...)
+		log.Printf(strconv.Itoa(time.Now().Second()) + " " + its(float64(time.Now().Nanosecond()) / 1e9) +" "+format, args...)
 	} else {
 		log.Printf(format, args...)
 	}
