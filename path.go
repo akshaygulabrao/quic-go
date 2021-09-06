@@ -51,18 +51,26 @@ type path struct {
 }
 
 // setup initializes values that are independent of the perspective
-func (p *path) setup(oliaSenders map[protocol.PathID]*congestion.OliaSender) {
+func (p *path) setup(vivaceSenders map[protocol.PathID]*congestion.VivaceSender) {
 	p.rttStats = &congestion.RTTStats{}
 
 	var cong congestion.SendAlgorithm
 
-	if p.sess.version >= protocol.VersionMP && oliaSenders != nil && p.pathID != protocol.InitialPathID {
-		cong = congestion.NewOliaSender(oliaSenders, p.rttStats, protocol.InitialCongestionWindow, protocol.DefaultMaxCongestionWindow)
-		oliaSenders[p.pathID] = cong.(*congestion.OliaSender)
+	if p.sess.version >= protocol.VersionMP && vivaceSenders != nil && p.pathID != protocol.InitialPathID {
+		//cong = congestion.NewVivaceSender(vivaceSenders, p.rttStats, protocol.InitialCongestionWindow, protocol.DefaultMaxCongestionWindow)
+		cong = congestion.NewVivaceSender(
+			vivaceSenders,
+			congestion.DefaultClock{},
+			p.rttStats,
+			false, /* don't use reno since chromium doesn't (why?) */
+			protocol.InitialCongestionWindow,
+			protocol.DefaultMaxCongestionWindow,
+		)
+
+		vivaceSenders[p.pathID] = cong.(*congestion.VivaceSender)
 	}
 
-	sentPacketHandler := ackhandler.NewSentPacketHandler(p.rttStats, cong, p.onRTO)
-
+	sentPacketHandler := ackhandler.NewSentPacketHandler(p.rttStats, cong, p.onRTO) 
 	now := time.Now()
 
 	p.sentPacketHandler = sentPacketHandler

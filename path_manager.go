@@ -24,7 +24,7 @@ type pathManager struct {
 	advertisedLocAddrs map[string]bool
 
 	// TODO (QDC): find a cleaner way
-	oliaSenders map[protocol.PathID]*congestion.OliaSender
+	vivaceSenders map[protocol.PathID]*congestion.VivaceSender
 
 	handshakeCompleted chan struct{}
 	runClosed          chan struct{}
@@ -49,7 +49,7 @@ func (pm *pathManager) setup(conn connection) {
 	pm.timer = time.NewTimer(0)
 	pm.nbPaths = 0
 
-	pm.oliaSenders = make(map[protocol.PathID]*congestion.OliaSender)
+	pm.vivaceSenders = make(map[protocol.PathID]*congestion.VivaceSender)
 
 	// Setup the first path of the connection
 	pm.sess.paths[protocol.InitialPathID] = &path{
@@ -59,7 +59,7 @@ func (pm *pathManager) setup(conn connection) {
 	}
 
 	// Setup this first path
-	pm.sess.paths[protocol.InitialPathID].setup(pm.oliaSenders)
+	pm.sess.paths[protocol.InitialPathID].setup(pm.vivaceSenders)
 
 	// With the initial path, get the remoteAddr to create paths accordingly
 	if conn.RemoteAddr() != nil {
@@ -148,7 +148,7 @@ func (pm *pathManager) createPath(locAddr net.UDPAddr, remAddr net.UDPAddr) erro
 		sess:   pm.sess,
 		conn:   &conn{pconn: pm.pconnMgr.pconns[locAddr.String()], currentAddr: &remAddr},
 	}
-	pth.setup(pm.oliaSenders)
+	pth.setup(pm.vivaceSenders)
 	pm.sess.paths[pm.nxtPathID] = pth
 	if utils.Debug() {
 		utils.Debugf("Created path %x on %s to %s", pm.nxtPathID, locAddr.String(), remAddr.String())
@@ -222,7 +222,7 @@ func (pm *pathManager) createPathFromRemote(p *receivedPacket) (*path, error) {
 		conn:   &conn{pconn: localPconn, currentAddr: remoteAddr},
 	}
 
-	pth.setup(pm.oliaSenders)
+	pth.setup(pm.vivaceSenders)
 	pm.sess.paths[pathID] = pth
 
 	if utils.Debug() {
