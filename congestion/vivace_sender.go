@@ -92,14 +92,7 @@ func NewVivaceSender(vivaceSenders map[protocol.PathID]*VivaceSender,clock Clock
 }
 
 func (v *VivaceSender) TimeUntilSend(now time.Time, bytesInFlight protocol.ByteCount) time.Duration {
-	if v.InRecovery() {
-		// PRR is used when in recovery.
-		return v.prr.TimeUntilSend(v.GetCongestionWindow(), bytesInFlight, v.GetSlowStartThreshold())
-	}
-	if v.GetCongestionWindow() > bytesInFlight {
-		return 0
-	}
-	return utils.InfDuration
+	return 0
 }
 
 func (v *VivaceSender) OnPacketSent(sentTime time.Time, bytesInFlight protocol.ByteCount, packetNumber protocol.PacketNumber, bytes protocol.ByteCount, isRetransmittable bool) bool {
