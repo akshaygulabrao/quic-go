@@ -68,6 +68,13 @@ func NewOliaSender(oliaSenders map[protocol.PathID]*OliaSender, rttStats *RTTSta
 	}
 }
 
+func (o *OliaSender) GetCooldown() time.Duration{
+	return 0
+}
+func (o *OliaSender) GetLastPacketTimestamp() time.Time	{
+	return time.Now()
+}
+
 func (o *OliaSender) TimeUntilSend(now time.Time, bytesInFlight protocol.ByteCount) time.Duration {
 	if o.InRecovery() {
 		// PRR is used when in recovery.

@@ -1,5 +1,4 @@
-package congestion
-
+package congestion 
 import (
 	"time"
 
@@ -55,23 +54,10 @@ type VivaceSender struct {
 
 	initialCongestionWindow    protocol.PacketNumber
 	initialMaxCongestionWindow protocol.PacketNumber
-}
 
-// NewCubicSender makes a new cubic sender
-//func NewCubicSender(clock Clock, rttStats *RTTStats, reno bool, initialCongestionWindow, initialMaxCongestionWindow protocol.PacketNumber) SendAlgorithmWithDebugInfo {
-	//return &CubicSender{
-		//rttStats:                   rttStats,
-		//initialCongestionWindow:    initialCongestionWindow,
-		//initialMaxCongestionWindow: initialMaxCongestionWindow,
-		//congestionWindow:           initialCongestionWindow,
-		//minCongestionWindow:        defaultMinimumCongestionWindow,
-		//slowstartThreshold:         initialMaxCongestionWindow,
-		//maxTCPCongestionWindow:     initialMaxCongestionWindow,
-		//numConnections:             defaultNumConnections,
-		//cubic:                      NewCubic(clock),
-		//reno:                       reno,
-	//}
-//}
+	cooldown time.Duration
+	lastPacketTimestamp time.Time
+}
 
 func NewVivaceSender(vivaceSenders map[protocol.PathID]*VivaceSender,clock Clock, rttStats *RTTStats, reno bool, initialCongestionWindow, initialMaxCongestionWindow protocol.PacketNumber) SendAlgorithmWithDebugInfo {
 	return &VivaceSender{
@@ -87,8 +73,17 @@ func NewVivaceSender(vivaceSenders map[protocol.PathID]*VivaceSender,clock Clock
 	vivace:                     NewVivace(clock),
 	reno:                       reno,
 	vivaceSenders:              vivaceSenders,
-
+	cooldown:		    5e3,
+	lastPacketTimestamp:	clock.Now(),
 	}
+}
+
+func (v *VivaceSender) GetCooldown() time.Duration{
+	return v.cooldown
+}
+
+func (v *VivaceSender) GetLastPacketTimestamp() time.Time{
+	return v.lastPacketTimestamp
 }
 
 func (v *VivaceSender) TimeUntilSend(now time.Time, bytesInFlight protocol.ByteCount) time.Duration {
@@ -106,6 +101,7 @@ func (v *VivaceSender) OnPacketSent(sentTime time.Time, bytesInFlight protocol.B
 	}
 	v.largestSentPacketNumber = packetNumber
 	v.hybridSlowStart.OnPacketSent(packetNumber)
+	v.lastPacketTimestamp = sentTime 
 	return true
 }
 

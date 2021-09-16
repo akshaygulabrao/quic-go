@@ -514,6 +514,7 @@ func (h *sentPacketHandler) GetStopWaitingFrame(force bool) *wire.StopWaitingFra
 }
 
 func (h *sentPacketHandler) SendingAllowed() bool {
+	onCooldown := time.Now().Add(-h.congestion.GetCooldown()).After(h.congestion.GetLastPacketTimestamp())
 	congestionLimited := h.bytesInFlight > h.congestion.GetCongestionWindow()
 	maxTrackedLimited := protocol.PacketNumber(len(h.retransmissionQueue)+h.packetHistory.Len()) >= protocol.MaxTrackedSentPackets
 	if congestionLimited {
@@ -525,7 +526,7 @@ func (h *sentPacketHandler) SendingAllowed() bool {
 	// Always allow sending of retransmissions. This should probably be limited
 	// to RTOs, but we currently don't have a nice way of distinguishing them.
 	haveRetransmissions := len(h.retransmissionQueue) > 0
-	return !maxTrackedLimited && (!congestionLimited || haveRetransmissions)
+	return !maxTrackedLimited && (!congestionLimited || haveRetransmissions) && !onCooldown
 }
 
 func (h *sentPacketHandler) retransmitTLP() {

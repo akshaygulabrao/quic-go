@@ -75,6 +75,15 @@ func NewCubicSender(clock Clock, rttStats *RTTStats, reno bool, initialCongestio
 		reno:                       reno,
 	}
 }
+//USED FOR VIVACE ONLY
+func (c *cubicSender) GetCooldown() time.Duration{
+	return 0
+}
+func (c *cubicSender) GetLastPacketTimestamp() time.Time{
+	return time.Now()
+}
+
+
 
 func (c *cubicSender) TimeUntilSend(now time.Time, bytesInFlight protocol.ByteCount) time.Duration {
 	if c.InRecovery() {
